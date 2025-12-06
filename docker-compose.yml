@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16
+    container_name: check-worthit-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: check_worthit
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # FastAPI Backend (scraper-api)
+  scraper-api:
+    build:
+      context: .
+      dockerfile: apps/scraper-api/Dockerfile
+    container_name: check-worthit-scraper-api
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/check_worthit
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./apps/scraper-api:/app/apps/scraper-api
+      - ./packages:/app/packages
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload --app-dir /app/apps/scraper-api
+
+  # Next.js Frontend (web)
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: check-worthit
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/check_worthit
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/web:/app/apps/web
+      - ./packages:/app/packages
+      - /app/node_modules
+      - /app/apps/web/node_modules
+      - /app/apps/web/.next
+    depends_on:
+      - postgres
+      - scraper-api
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge

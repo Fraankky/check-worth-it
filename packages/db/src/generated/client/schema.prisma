@@ -1,0 +1,144 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Marketplace {
+  SHOPEE
+  TOKOPEDIA
+}
+
+model Shop {
+  id             Int         @id @default(autoincrement())
+  marketplace    Marketplace
+  externalShopId String
+  name           String
+  shopLevel      String?
+  rating         Float?
+  location       String?
+
+  products Product[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([marketplace, externalShopId])
+}
+
+model Product {
+  id                Int         @id @default(autoincrement())
+  marketplace       Marketplace
+  url               String      @unique
+  externalProductId String?
+  name              String
+  thumbnailUrl      String?
+  category          String?
+
+  shopId Int?
+  shop   Shop? @relation(fields: [shopId], references: [id])
+
+  isTracked Boolean @default(true)
+
+  snapshots    ProductSnapshot[]
+  reviews      ProductReviewSample[]
+  analyses     ProductAIAnalysis[]
+  compareItems CompareItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([marketplace])
+  @@index([shopId])
+}
+
+model ProductSnapshot {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+
+  scrapedAt    DateTime @default(now())
+  price        Int
+  currency     String   @default("IDR")
+  rating       Float?
+  reviewsCount Int?
+  soldCount    Int?
+
+  rawSpecs Json?
+  rawData  Json?
+
+  reviews  ProductReviewSample[]
+  analyses ProductAIAnalysis[]
+
+  @@index([productId, scrapedAt])
+}
+
+model ProductReviewSample {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+
+  snapshotId Int?
+  snapshot   ProductSnapshot? @relation(fields: [snapshotId], references: [id])
+
+  platformReviewId String?
+  rating           Int
+  authorName       String?
+  content          String
+  scrapedAt        DateTime @default(now())
+
+  @@index([productId])
+  @@index([snapshotId])
+}
+
+model ProductAIAnalysis {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+
+  snapshotId Int?
+  snapshot   ProductSnapshot? @relation(fields: [snapshotId], references: [id])
+
+  worthItScore Int
+  priceComment String?
+  summary      String?
+
+  pros      Json?
+  cons      Json?
+  modelName String?
+
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@index([snapshotId])
+}
+
+model CompareSession {
+  id        Int      @id @default(autoincrement())
+  title     String?
+  createdAt DateTime @default(now())
+
+  items CompareItem[]
+}
+
+model CompareItem {
+  id               Int @id @default(autoincrement())
+  compareSessionId Int
+  productId        Int
+  sortOrder        Int @default(0)
+
+  session CompareSession @relation(fields: [compareSessionId], references: [id])
+  product Product        @relation(fields: [productId], references: [id])
+
+  @@index([compareSessionId])
+  @@index([productId])
+}

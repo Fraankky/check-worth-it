@@ -1,0 +1,18 @@
+{
+  "name": "smart-marketplace-helper",
+  "version": "1.0.0",
+  "private": true,
+   "scripts": {
+     "dev": "docker-compose up postgres scraper-api -d && pnpm dev:web",
+     "dev:web": "pnpm --filter web dev",
+     "dev:scraper-api": "python apps/scraper-api/main.py",
+      "dev:db:migrate": "pnpm --filter @check-worthit/db run prisma:migrate",
+     "dev:db:generate": "pnpm --filter @check-worthit/db run prisma:generate"
+   },
+  "engines": {
+    "pnpm": ">=8.0.0",
+    "npm": "please-use-pnpm",
+    "yarn": "please-use-pnpm"
+  }
+}
+
