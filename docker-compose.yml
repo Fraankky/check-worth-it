@@ -40,7 +40,26 @@ services:
         condition: service_healthy
     networks:
       - app-network
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload --app-dir /app/apps/scraper-api
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload --app-dir /app/apps/scraper-api/src
+
+  # Scrape Scheduler (cron)
+  scrape-scheduler:
+    build:
+      context: .
+      dockerfile: apps/scraper-api/Dockerfile
+    container_name: check-worthit-scrape-scheduler
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/check_worthit
+      PYTHONUNBUFFERED: 1
+    volumes:
+      - ./apps/scraper-api:/app/apps/scraper-api
+      - ./packages:/app/packages
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+    command: sh -c "cd /app/apps/scraper-api/src && cron -f"
 
   # Next.js Frontend (web)
   web:
@@ -51,6 +70,8 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/check_worthit
       NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_SCRAPER_API_URL: http://localhost:8000
+      SCRAPER_API_URL: http://scraper-api:8000
     ports:
       - "3000:3000"
     volumes:

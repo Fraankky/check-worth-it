@@ -1,0 +1,2 @@
+# Run scrape worker every 5 minutes
+*/5 * * * * cd /app/apps/scraper-api && python src/scrape_worker.py >> /var/log/scrape_worker.log 2>&1
