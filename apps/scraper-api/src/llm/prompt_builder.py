@@ -21,12 +21,12 @@ def build_analyze_prompt(payload: dict, price_stats: dict) -> list[dict]:
             Reviews (sample):
             {payload["reviews"][:5]}
 
-            Return JSON with:
-            - worthItScore (0-100)
-            - summary
-            - pros
-            - cons
-            - priceInsight
+             Return JSON with:
+             - worthItScore (0-100)
+             - summary (in Bahasa Indonesia)
+             - pros (array in Bahasa Indonesia)
+             - cons (array in Bahasa Indonesia)
+             - priceInsight (in Bahasa Indonesia)
             """,
         },
     ]
@@ -58,12 +58,12 @@ def build_compare_prompt(
             Price History Stats: {stats2}
             Reviews: {product2["reviews"][:3]}
 
-            Bandingkan kedua produk ini dan berikan:
-            - comparisonSummary: Ringkasan perbandingan
-            - recommendedProduct: Nama produk yang lebih direkomendasikan
-            - priceComparison: Perbandingan harga
-            - reviewComparison: Perbandingan review
-            - overallVerdict: Kesimpulan akhir dalam 1 paragraf
+             Bandingkan kedua produk ini dan berikan (jawab dalam Bahasa Indonesia):
+             - comparisonSummary: Ringkasan perbandingan
+             - recommendedProduct: Nama produk yang lebih direkomendasikan
+             - priceComparison: Perbandingan harga
+             - reviewComparison: Perbandingan review
+             - overallVerdict: Kesimpulan akhir dalam 1 paragraf
             """,
         },
     ]

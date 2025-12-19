@@ -1,6 +1,7 @@
 import os
 import httpx
 import json
+import re
 
 
 async def call_llm_json(messages: list[dict]) -> dict:
@@ -9,40 +10,57 @@ async def call_llm_json(messages: list[dict]) -> dict:
         # Check if this is a comparison request
         prompt_text = messages[-1]["content"] if messages else ""
         if "Bandingkan kedua produk" in prompt_text:
+            # Extract product names from prompt
+            name_matches = re.findall(r"'name':\s*'([^']+)'", prompt_text)
+            product1_name = name_matches[0] if len(name_matches) > 0 else "Produk 1"
+            product2_name = name_matches[1] if len(name_matches) > 1 else "Produk 2"
+
             # Return mock comparison response
             return {
-                "comparisonSummary": "Kedua sepatu lari ini memiliki kualitas yang baik dengan rating tinggi, namun berbeda dalam hal harga dan merek.",
-                "recommendedProduct": "ASICS Women Novablast 5",
-                "priceComparison": "ASICS Novablast 5 lebih murah Rp 1.889.100 dibanding New Balance FuelCell Rebel V5 yang Rp 2.300.000.",
-                "reviewComparison": "Keduanya memiliki rating 5 bintang dengan review positif.",
-                "overallVerdict": "ASICS Women Novablast 5 adalah pilihan yang lebih worth it karena harganya lebih terjangkau namun tetap memiliki kualitas merek ASICS yang terpercaya, cocok untuk wanita yang mencari sepatu lari dengan performa tinggi namun budget-friendly.",
+                "comparisonSummary": f"Kedua produk ini ({product1_name} dan {product2_name}) memiliki kualitas yang baik dengan rating tinggi, namun berbeda dalam hal harga dan merek.",
+                "recommendedProduct": product1_name,
+                "priceComparison": f"{product1_name} memiliki harga yang kompetitif dibanding {product2_name}.",
+                "reviewComparison": "Keduanya memiliki rating tinggi dengan ulasan positif.",
+                "overallVerdict": f"{product1_name} adalah pilihan yang lebih worth it karena harganya lebih terjangkau namun tetap memiliki kualitas yang baik.",
             }
         else:
+            # Extract product name from prompt
+            name_match = re.search(r"'name':\s*'([^']+)'", prompt_text)
+            product_name = name_match.group(1) if name_match else "Produk Ini"
+
             # Return mock single product response
             return {
                 "worthItScore": 75,
-                "summary": "This ASICS running shoe appears to be a good value based on the price and positive reviews.",
+                "summary": f"{product_name} tampaknya merupakan nilai yang baik berdasarkan harga dan ulasan positif.",
                 "pros": [
-                    "Good brand reputation",
-                    "Positive customer reviews",
-                    "Reasonable price",
+                    "Reputasi merek yang baik",
+                    "Ulasan pelanggan positif",
+                    "Harga yang wajar",
                 ],
-                "cons": ["Limited price history available", "Size specific"],
-                "priceInsight": "Price seems competitive for an ASICS branded running shoe.",
+                "cons": ["Riwayat harga terbatas tersedia", "Spesifik ukuran"],
+                "priceInsight": f"Harga tampaknya kompetitif untuk produk {product_name}.",
             }
 
     async with httpx.AsyncClient(timeout=60) as client:
+        model = os.getenv("LLM_MODEL", "microsoft/wizardlm-2-8x22b")
+        # Handle shorthand model names
+        if model == "deepseek-r1t2-chimera:free":
+            model = "tngtech/deepseek-r1t2-chimera:free"
+        request_json = {
+            "model": model,
+            "messages": messages,
+        }
+        # Add response_format only if supported (skip for DeepSeek-like models)
+        if "deepseek" not in model.lower():
+            request_json["response_format"] = {"type": "json_object"}
+
         res = await client.post(
             "https://openrouter.ai/api/v1/chat/completions",
             headers={
                 "Authorization": f"Bearer {os.getenv('OPENROUTER_API_KEY')}",
                 "Content-Type": "application/json",
             },
-            json={
-                "model": "microsoft/wizardlm-2-8x22b",
-                "messages": messages,
-                "response_format": {"type": "json_object"},
-            },
+            json=request_json,
         )
 
         if res.status_code != 200:
@@ -53,4 +71,16 @@ async def call_llm_json(messages: list[dict]) -> dict:
             raise Exception(f"Invalid API response: {data}")
 
         content = data["choices"][0]["message"]["content"]
+
+        # Extract JSON from content (handle models that include reasoning or markdown)
+        # Find the last JSON object in the content
+        json_matches = re.findall(r"\{[^{}]*\}", content)
+        if json_matches:
+            content = json_matches[-1]  # Take the last match to avoid partial
+        else:
+            # Fallback to broader search
+            json_match = re.search(r"\{[\s\S]*\}", content)
+            if json_match:
+                content = json_match.group(0)
+
         return json.loads(content)

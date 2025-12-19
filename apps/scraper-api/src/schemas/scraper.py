@@ -14,5 +14,7 @@ class Review(BaseModel):
 class ScrapeProductResponse(BaseModel):
     title: str
     price: int
+    rating: Optional[float] = None
+    reviews_count: Optional[int] = None
     reviews: List[Review]
     image_url: Optional[str] = None
