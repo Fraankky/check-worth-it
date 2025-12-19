@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from src.schemas.scraper import ScrapeProductRequest, ScrapeProductResponse
-from src.services.scraper_service import scrape_shopee_product, scrape_tokopedia_product
+from schemas.scraper import ScrapeProductRequest, ScrapeProductResponse
+from services.scraper_service import scrape_shopee_product, scrape_tokopedia_product
 
 router = APIRouter(prefix="/scraper", tags=["Scraper"])
 

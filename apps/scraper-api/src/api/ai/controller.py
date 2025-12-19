@@ -1,11 +1,11 @@
 from fastapi import APIRouter, HTTPException
-from src.schemas.ai import (
+from schemas.ai import (
     AnalyzeProductRequest,
     AnalyzeProductResponse,
     CompareProductsRequest,
     CompareProductsResponse,
 )
-from src.services.ai_analysis_service import analyze_product, compare_products
+from services.ai_analysis_service import analyze_product, compare_products
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 
