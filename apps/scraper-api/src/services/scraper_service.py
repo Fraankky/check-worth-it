@@ -2,8 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import re
-from config.settings import settings
-from schemas.scraper import ScrapeProductResponse, Review
+from ..config.settings import settings
+from ..schemas.scraper import ScrapeProductResponse, Review
 
 
 def scrape_shopee_product(url: str) -> ScrapeProductResponse:

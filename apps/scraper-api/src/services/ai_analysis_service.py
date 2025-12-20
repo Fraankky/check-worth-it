@@ -1,12 +1,12 @@
-from schemas.ai import (
+from ..schemas.ai import (
     AnalyzeProductRequest,
     AnalyzeProductResponse,
     CompareProductsRequest,
     CompareProductsResponse,
 )
-from utils.price_stats import compute_price_stats
-from llm.prompt_builder import build_analyze_prompt, build_compare_prompt
-from llm.client import call_llm_json
+from ..utils.price_stats import compute_price_stats
+from ..llm.prompt_builder import build_analyze_prompt, build_compare_prompt
+from ..llm.client import call_llm_json
 
 
 async def analyze_product(payload: AnalyzeProductRequest) -> AnalyzeProductResponse:

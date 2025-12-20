@@ -28,10 +28,18 @@ async def call_llm_json(messages: list[dict]) -> dict:
             name_match = re.search(r"'name':\s*'([^']+)'", prompt_text)
             product_name = name_match.group(1) if name_match else "Produk Ini"
 
-            # Return mock single product response
+            # Extract rating from prompt
+            rating_match = re.search(r"'rating':\s*([\d.]+)", prompt_text)
+            rating = float(rating_match.group(1)) if rating_match else 4.5
+
+            # Compute score based on rating (simple logic)
+            base_score = int(rating * 20)  # 4.5 -> 90, etc.
+            worth_it_score = min(100, max(50, base_score))  # between 50-100
+
+            # Return mock single product response with dynamic score
             return {
-                "worthItScore": 75,
-                "summary": f"{product_name} tampaknya merupakan nilai yang baik berdasarkan harga dan ulasan positif.",
+                "worthItScore": worth_it_score,
+                "summary": f"{product_name} tampaknya merupakan nilai yang {'sangat baik' if worth_it_score > 80 else 'cukup baik'} berdasarkan harga dan ulasan positif.",
                 "pros": [
                     "Reputasi merek yang baik",
                     "Ulasan pelanggan positif",
@@ -42,10 +50,10 @@ async def call_llm_json(messages: list[dict]) -> dict:
             }
 
     async with httpx.AsyncClient(timeout=60) as client:
-        model = os.getenv("LLM_MODEL", "microsoft/wizardlm-2-8x22b")
+        model = os.getenv("LLM_MODEL", "openai/gpt-3.5-turbo")
         # Handle shorthand model names
-        if model == "deepseek-r1t2-chimera:free":
-            model = "tngtech/deepseek-r1t2-chimera:free"
+        if model == "openai/gpt-4o-mini":
+            model = "openai/gpt-4o-mini"
         request_json = {
             "model": model,
             "messages": messages,

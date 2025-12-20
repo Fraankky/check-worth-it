@@ -1,4 +1,3 @@
-
 """
 Scrape Worker Script
 Runs periodic scraping of products from Shopee.
@@ -9,7 +8,7 @@ import os
 
 sys.path.append(os.path.dirname(__file__))
 
-from services.scraper_service import scrape_shopee_product
+from .services.scraper_service import scrape_shopee_product
 import logging
 
 logging.basicConfig(level=logging.INFO)

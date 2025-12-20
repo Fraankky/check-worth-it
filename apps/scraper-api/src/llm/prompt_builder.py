@@ -3,30 +3,33 @@ def build_analyze_prompt(payload: dict, price_stats: dict) -> list[dict]:
         {
             "role": "system",
             "content": (
-                "You are an assistant helping Indonesian marketplace users "
-                "decide whether a product is worth buying. "
-                "Answer in Bahasa Indonesia. "
-                "Always return JSON."
+                "You are an AI assistant that analyzes products from Indonesian marketplaces "
+                "to determine if they are worth buying. Analyze the product data and provide "
+                "a worth-it score from 0-100, where 100 means definitely worth it and 0 means not worth it. "
+                "Consider price history, ratings, reviews, and market value. "
+                "Always return valid JSON only, no additional text."
             ),
         },
         {
             "role": "user",
             "content": f"""
-            Product:
-            {payload["product"]}
+Analyze this product and determine if it's worth buying:
 
-            Price History Stats:
-            {price_stats}
+Product Information:
+{payload["product"]}
 
-            Reviews (sample):
-            {payload["reviews"][:5]}
+Price History Statistics:
+{price_stats}
 
-             Return JSON with:
-             - worthItScore (0-100)
-             - summary (in Bahasa Indonesia)
-             - pros (array in Bahasa Indonesia)
-             - cons (array in Bahasa Indonesia)
-             - priceInsight (in Bahasa Indonesia)
+Sample Reviews:
+{payload["reviews"][:5]}
+
+Return a JSON object with exactly these fields:
+- worthItScore: integer 0-100
+- summary: string summary in Indonesian
+- pros: array of strings in Indonesian
+- cons: array of strings in Indonesian
+- priceInsight: string analysis in Indonesian
             """,
         },
     ]
