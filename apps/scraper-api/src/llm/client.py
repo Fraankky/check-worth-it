@@ -6,6 +6,7 @@ import re
 
 async def call_llm_json(messages: list[dict]) -> dict:
     api_key = os.getenv("OPENROUTER_API_KEY")
+    
     if not api_key:
         # Check if this is a comparison request
         prompt_text = messages[-1]["content"] if messages else ""
