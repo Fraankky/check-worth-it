@@ -1,35 +1,62 @@
 def build_analyze_prompt(payload: dict, price_stats: dict) -> list[dict]:
+    schema = {
+        "decision": "BUY_NOW | WAIT | NOT_RECOMMENDED",
+        "confidenceLevel": "HIGH | MEDIUM | LOW",
+        "worthItScore": 0 - 100,
+        "summary": {"oneLineVerdict": "", "targetUser": ""},
+        "reasonsToBuy": [],
+        "reasonsToWait": [],
+        "risks": [],
+        "priceInsight": {
+            "currentPricePosition": "CHEAP | FAIR | EXPENSIVE",
+            "explanation": "",
+        },
+        "reviewInsight": {
+            "reviewReliability": "HIGH | MEDIUM | LOW",
+            "explanation": "",
+        },
+        "recommendation": {"action": "", "rationale": ""},
+    }
+
     return [
         {
             "role": "system",
             "content": (
-                "You are an AI assistant that analyzes products from Indonesian marketplaces "
-                "to determine if they are worth buying. Analyze the product data and provide "
-                "a worth-it score from 0-100, where 100 means definitely worth it and 0 means not worth it. "
-                "Consider price history, ratings, reviews, and market value. "
-                "Always return valid JSON only, no additional text."
+                "You are an objective shopping decision assistant. Your task is NOT to summarize the product, "
+                "but to help the user decide whether to buy, wait, or skip. You must use the provided price "
+                "statistics and review signals, highlight uncertainty and risks, avoid promotional language, "
+                "and base all reasoning on data. Always return valid JSON only, no additional text."
             ),
         },
         {
             "role": "user",
             "content": f"""
-Analyze this product and determine if it's worth buying:
+Analyze this product and provide a clear decision recommendation:
 
-Product Information:
+Product data:
 {payload["product"]}
 
-Price History Statistics:
-{price_stats}
+Price analysis:
+- Current price: {price_stats.get("current", "N/A")}
+- Historical average: {price_stats.get("avg", "N/A")}
+- Price position: {price_stats.get("pricePosition", "UNKNOWN")} ({price_stats.get("deltaPercent", 0)}% from average)
 
-Sample Reviews:
-{payload["reviews"][:5]}
+Review analysis:
+- Reliability: {price_stats.get("reviewReliability", "LOW")} (confidence: {price_stats.get("confidenceScore", 0)}%)
+- Total reviews: {price_stats.get("totalReviews", 0)}
+- Average review length: {price_stats.get("avgLength", 0)} characters
+- Repetitive ratio: {price_stats.get("repetitiveRatio", 0)}
 
-Return a JSON object with exactly these fields:
-- worthItScore: integer 0-100
-- summary: string summary in Indonesian
-- pros: array of strings in Indonesian
-- cons: array of strings in Indonesian
-- priceInsight: string analysis in Indonesian
+Sample reviews:
+{payload["reviews"][:3] if payload.get("reviews") else "No reviews"}
+
+Decision rules:
+- If price position is EXPENSIVE, prefer WAIT
+- If review reliability is LOW, reduce confidence
+- If price is CHEAP and reviews are reliable, allow BUY_NOW
+
+Return STRICT JSON following this schema:
+{str(schema).replace("'", '"')}
             """,
         },
     ]

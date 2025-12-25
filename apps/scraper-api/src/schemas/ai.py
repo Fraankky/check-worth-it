@@ -26,12 +26,37 @@ class AnalyzeProductRequest(BaseModel):
     reviews: List[ReviewForAI]
 
 
+class SummaryData(BaseModel):
+    oneLineVerdict: str
+    targetUser: str
+
+
+class PriceInsightData(BaseModel):
+    currentPricePosition: Literal["CHEAP", "FAIR", "EXPENSIVE"]
+    explanation: str
+
+
+class ReviewInsightData(BaseModel):
+    reviewReliability: Literal["HIGH", "MEDIUM", "LOW"]
+    explanation: str
+
+
+class RecommendationData(BaseModel):
+    action: str
+    rationale: str
+
+
 class AnalyzeProductResponse(BaseModel):
+    decision: Literal["BUY_NOW", "WAIT", "NOT_RECOMMENDED"]
+    confidenceLevel: Literal["HIGH", "MEDIUM", "LOW"]
     worthItScore: int = Field(..., ge=0, le=100)
-    summary: str
-    pros: List[str]
-    cons: List[str]
-    priceInsight: Optional[str]
+    summary: SummaryData
+    reasonsToBuy: List[str]
+    reasonsToWait: List[str]
+    risks: List[str]
+    priceInsight: PriceInsightData
+    reviewInsight: ReviewInsightData
+    recommendation: RecommendationData
     modelName: str
 
 
