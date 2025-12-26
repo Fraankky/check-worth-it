@@ -8,7 +8,6 @@ from ..utils.price_stats import compute_price_stats, compute_review_confidence
 from ..llm.prompt_builder import build_analyze_prompt, build_compare_prompt
 from ..llm.client import call_llm_json
 
-
 async def analyze_product(payload: AnalyzeProductRequest) -> AnalyzeProductResponse:
     price_stats = compute_price_stats([p.dict() for p in payload.priceHistory])
     review_stats = compute_review_confidence([r.dict() for r in payload.reviews])

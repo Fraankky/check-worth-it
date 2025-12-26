@@ -1,4 +1,6 @@
 from statistics import mean
+from typing import List
+import statistics
 
 
 def compute_price_stats(price_history: list[dict]) -> dict:
@@ -90,3 +92,36 @@ def compute_review_confidence(reviews: list[dict]) -> dict:
         "avgLength": round(avg_length, 1),
         "repetitiveRatio": round(repetitive_ratio, 2),
     }
+
+
+def price_fairness_score(current_price: float, history_prices: List[float]) -> float:
+    avg = statistics.mean(history_prices)
+    return round((avg / current_price) * 100, 2)
+    # >100 = cheap, <100 = expensive
+
+
+def price_trend_signal(history_prices: List[float]) -> str:
+    if len(history_prices) < 3:
+        return "unknown"
+
+    first = statistics.mean(history_prices[: len(history_prices) // 2])
+    second = statistics.mean(history_prices[len(history_prices) // 2 :])
+
+    if second < first * 0.97:
+        return "dropping"
+    if second > first * 1.03:
+        return "rising"
+    return "stable"
+
+
+def review_confidence_score(rating: float, review_count: int) -> float:
+    weight = min(review_count / 1000, 1)
+    return round(rating * weight, 2)
+
+
+def market_manipulation_risk(price_volatility: float) -> str:
+    if price_volatility > 0.25:
+        return "high"
+    if price_volatility > 0.15:
+        return "medium"
+    return "low"
