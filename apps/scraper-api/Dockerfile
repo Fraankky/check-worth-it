@@ -1,38 +1,35 @@
-FROM python:3.11-slim                    
-# Pakai Python 3.11 sebagai base
+FROM python:3.11-slim
 
-WORKDIR /app                             
-# Set working directory
+WORKDIR /app
 
-# Install dependencies sistem (gcc untuk compile, postgresql-client, cron, playwright)
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     wget \
-    postgresql-client \
-    cron \
+    gnupg \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy file requirements
-COPY apps/scraper-api/requirements.txt ./apps/scraper-api/
+# Copy requirements first (for caching)
+COPY requirements.txt .
 
-# Install Python packages
-RUN pip install --no-cache-dir -r apps/scraper-api/requirements.txt
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Install Playwright browsers
 RUN playwright install chromium
 RUN playwright install-deps chromium
 
-# Copy kode aplikasi
-COPY apps/scraper-api ./apps/scraper-api
-COPY packages ./packages
+# Copy application code
+COPY . .
 
-# Setup crontab
-COPY apps/scraper-api/crontab /etc/cron.d/scrape-cron
-RUN chmod 0644 /etc/cron.d/scrape-cron && crontab /etc/cron.d/scrape-cron
+# Expose port
+EXPOSE 8000
 
-EXPOSE 8000                              
-# Expose port 8000
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD python -c "import requests; requests.get('http://localhost:8000/health')" || exit 1
 
-# Jalankan aplikasi FastAPI
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Start command
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
