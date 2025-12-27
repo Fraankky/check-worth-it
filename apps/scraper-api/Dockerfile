@@ -4,9 +4,11 @@ FROM python:3.11-slim
 WORKDIR /app                             
 # Set working directory
 
-# Install dependencies sistem (gcc untuk compile, postgresql-client, cron)
+# Install dependencies sistem (gcc untuk compile, postgresql-client, cron, playwright)
 RUN apt-get update && apt-get install -y \
     gcc \
+    g++ \
+    wget \
     postgresql-client \
     cron \
     && rm -rf /var/lib/apt/lists/*
@@ -16,6 +18,10 @@ COPY apps/scraper-api/requirements.txt ./apps/scraper-api/
 
 # Install Python packages
 RUN pip install --no-cache-dir -r apps/scraper-api/requirements.txt
+
+# Install Playwright browsers
+RUN playwright install chromium
+RUN playwright install-deps chromium
 
 # Copy kode aplikasi
 COPY apps/scraper-api ./apps/scraper-api
